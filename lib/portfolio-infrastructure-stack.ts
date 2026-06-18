@@ -13,7 +13,7 @@ export class PortfolioInfrastructureStack extends cdk.Stack {
       // Connect to GitHub repo
       sourceCodeProvider: new amplify.GitHubSourceCodeProvider({
         owner: 'keno1215',
-        repository: 'terraform-portfolio-project',
+        repository: 'portfolio',
         oauthToken: cdk.SecretValue.secretsManager('github-token'),
       }),
 
