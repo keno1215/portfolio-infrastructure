@@ -1,16 +1,58 @@
-import * as cdk from 'aws-cdk-lib/core';
+import * as cdk from 'aws-cdk-lib';
+import * as amplify from '@aws-cdk/aws-amplify-alpha';
+import { BuildSpec } from 'aws-cdk-lib/aws-codebuild';
 import { Construct } from 'constructs';
-// import * as sqs from 'aws-cdk-lib/aws-sqs';
 
 export class PortfolioInfrastructureStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
-    // The code that defines your stack goes here
+    // Amplify Application
+    const amplifyApp = new amplify.App(this, 'PortfolioApplication', {
+      appName: 'Portfolio',
+      // Connect to GitHub repo
+      sourceCodeProvider: new amplify.GitHubSourceCodeProvider({
+        owner: 'keno1215',
+        repository: 'terraform-portfolio-project',
+        oauthToken: cdk.SecretValue.secretsManager('github-token'),
+      }),
 
-    // example resource
-    // const queue = new sqs.Queue(this, 'PortfolioInfrastructureQueue', {
-    //   visibilityTimeout: cdk.Duration.seconds(300)
-    // });
+      // Build Specification
+      buildSpec: BuildSpec.fromObjectToYaml({
+        version: '1.0',
+        frontend: {
+          phases: {
+            preBuild: {
+              commands: [
+                'echo "starting this build"',
+                'cd portfolio',
+                'npm install',
+              ],
+            },
+            build: {
+              commands: [
+                'echo "building our NextJS app..."',
+                'npm run build',
+                'echo "build is completed"',
+              ],
+            },
+          },
+          artifacts: {
+            baseDirectory: 'portfolio/out',
+            files: ['**/*'],
+          },
+          cache: {
+            paths: [
+              'node_modules/**/*',
+              '.next/cache/**/*',
+            ],
+          },
+        },
+      }),
+    });
+
+    const mainBranch = amplifyApp.addBranch('main', {
+      autoBuild: true,
+    });
   }
 }
